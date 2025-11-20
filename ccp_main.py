@@ -3,6 +3,34 @@ import agent_irony
 import os  # <--- Added to find file path
 from datetime import datetime
 
+
+def format_section_header(title: str) -> str:
+    separator = "-" * len(title)
+    return f"{title}\n{separator}"
+
+
+def format_science_entry(topic: str, paper: dict) -> str:
+    details = [
+        f"Topic.....: {topic}",
+        f"Headline..: {paper['Headline']}",
+        f"Source....: {paper['Journal']} ({paper['Date']})",
+        f"Key Topics: {', '.join(paper['Key_Topics']) if paper['Key_Topics'] else 'No concepts returned'}",
+        f"Insight...: {paper['Abstract_Snippet']}",
+        f"Link......: {paper['URL']}",
+    ]
+    return "\n".join(details)
+
+
+def format_society_entry(theme: str, story: dict) -> str:
+    details = [
+        f"Theme.....: {theme}",
+        f"Headline..: {story['Headline']}",
+        f"Tone......: {story['Tone_Score']:.2f} (lower = more negative)",
+        f"Source....: {story['Source']} ({story['Date']})",
+        f"Link......: {story['URL']}",
+    ]
+    return "\n".join(details)
+
 def generate_dossier():
     print("🚀 LAUNCHING CONSCIOUS CURATION PIPELINE...\n")
     
@@ -11,8 +39,9 @@ def generate_dossier():
     scout_irony = agent_irony.IronyScout()
     
     dossier_lines = []
-    dossier_lines.append(f"THE MYSTIC'S DOSSIER - {datetime.now().strftime('%Y-%m-%d')}")
-    dossier_lines.append("="*60)
+    dossier_lines.append(f"THE MYSTIC'S DOSSIER :: {datetime.now().strftime('%Y-%m-%d %H:%M %Z')}")
+    dossier_lines.append("=" * 70)
+    dossier_lines.append("Signal-only briefings for the mystic. (No interpretations included.)")
     dossier_lines.append("")
 
     # ---------------------------------------------------------
@@ -25,21 +54,18 @@ def generate_dossier():
         "Quantum Bridges": "quantum biology"
     }
     
-    dossier_lines.append("SECTION I: THE HIDDEN MECHANICS (Science)")
-    dossier_lines.append("-" * 40)
+    dossier_lines.append(format_section_header("SECTION I: THE HIDDEN MECHANICS (Science)"))
     
+    science_hits = 0
     for topic, query in science_queries.items():
         print(f"   -> Scouting: {topic}...")
         papers = scout_science.fetch_papers(query, days_back=120)
-        
+
         if papers:
-            top_paper = papers[0] 
-            dossier_lines.append(f"Topic:    {topic}")
-            dossier_lines.append(f"Headline: {top_paper['Headline']}")
-            dossier_lines.append(f"Source:   {top_paper['Journal']} ({top_paper['Date']})")
-            dossier_lines.append(f"Insight:  {top_paper['Abstract_Snippet']}")
-            dossier_lines.append(f"Link:     {top_paper['URL']}")
+            top_paper = papers[0]
+            dossier_lines.append(format_science_entry(topic, top_paper))
             dossier_lines.append("")
+            science_hits += 1
         else:
             print(f"      (No papers found for {topic})")
             dossier_lines.append(f"Topic: {topic} - No high-confidence signal today.\n")
@@ -56,23 +82,27 @@ def generate_dossier():
         "The Green Dilemma": 'environment (problem OR crisis)'
     }
     
-    dossier_lines.append("SECTION II: THE HUMAN PREDICAMENT (Society)")
-    dossier_lines.append("-" * 40)
+    dossier_lines.append(format_section_header("SECTION II: THE HUMAN PREDICAMENT (Society)"))
     
+    society_hits = 0
     for theme, query in irony_queries.items():
         print(f"   -> Scouting: {theme}...")
         stories = scout_irony.fetch_irony(query, theme)
-        
+
         if stories:
-            top_story = stories[0] 
-            dossier_lines.append(f"Theme:    {theme}")
-            dossier_lines.append(f"Headline: {top_story['Headline']}")
-            dossier_lines.append(f"Tone:     {top_story['Tone_Score']} (Signal)")
-            dossier_lines.append(f"Link:     {top_story['URL']}")
+            top_story = stories[0]
+            dossier_lines.append(format_society_entry(theme, top_story))
             dossier_lines.append("")
+            society_hits += 1
         else:
             print(f"      (No stories found for {theme})")
             dossier_lines.append(f"Theme: {theme} - No high-confidence signal today.\n")
+
+    dossier_lines.append(format_section_header("PIPELINE DIAGNOSTICS"))
+    dossier_lines.append(f"Science signals captured : {science_hits}/{len(science_queries)}")
+    dossier_lines.append(f"Society signals captured : {society_hits}/{len(irony_queries)}")
+    dossier_lines.append("-" * 70)
+    dossier_lines.append("Signal-only rule applied. No interpretations were generated.")
 
     # ---------------------------------------------------------
     # FINAL: SAVE TO DISK WITH DIAGNOSTICS
